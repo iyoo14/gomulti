@@ -17,13 +17,9 @@ const (
 )
 
 type queue struct {
-	values    [MAX_QUEUE_NUM]int
-	remain    int
-	rp        int
-	wp        int
-	wg        *sync.WaitGroup
-	not_full  *sync.Cond
-	not_empty *sync.Cond
+	values chan int
+	wg     *sync.WaitGroup
+	lock   *sync.Mutex
 }
 
 type thread_arg struct {
@@ -32,44 +28,19 @@ type thread_arg struct {
 }
 
 func enqueue(q *queue, v int, id int) {
-	fmt.Printf("en wait %d\n", id)
-	q.not_full.L.Lock()
-	fmt.Printf("en start %d\n", id)
-	defer q.not_full.L.Unlock()
-	for q.remain == MAX_QUEUE_NUM {
-		q.not_full.Wait()
-	}
-	q.values[q.wp] = v
-	q.wp++
-	q.remain++
-	if q.wp == MAX_QUEUE_NUM {
-		q.wp = 0
-	}
-	//q.not_empty.Signal()
-	q.not_full.Signal()
-	fmt.Printf("en end %d\n", id)
+	q.values <- v
 }
 
-func dequeue(q *queue, v *int, id int) {
-	//q.not_empty.L.Lock()
-	fmt.Printf("de wait %d\n", id)
-	q.not_full.L.Lock()
-	fmt.Printf("de start %d\n", id)
-	//defer q.not_empty.L.Unlock()
-	defer q.not_full.L.Unlock()
-	for q.remain == 0 {
-		fmt.Printf("q empty %d\n", id)
-		//q.not_empty.Wait()
-		q.not_full.Wait()
+func dequeue(q *queue, id int) (v int) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	for {
+		if len(q.values) != 0 {
+			break
+		}
+		time.Sleep(1 * time.Second)
 	}
-	*v = q.values[q.rp]
-	q.rp++
-	q.remain--
-	if q.rp == MAX_QUEUE_NUM {
-		q.rp = 0
-	}
-	q.not_full.Signal()
-	fmt.Printf("de end %d\n", id)
+	return <-q.values
 }
 
 func producer_func(args *thread_arg) {
@@ -87,7 +58,7 @@ func producer_func(args *thread_arg) {
 func consumer_func(args *thread_arg) {
 	var i int
 	for {
-		dequeue(args.queue, &i, args.id)
+		i = dequeue(args.queue, args.id)
 		if i == END_DATA {
 			break
 		}
@@ -104,19 +75,13 @@ func main() {
 	var ptarg [THREAD_NUM]*thread_arg
 	var ctarg [THREAD_NUM]*thread_arg
 
-	var nf = new(sync.Mutex)
-	var not_full = sync.NewCond(nf)
-	var ne = new(sync.Mutex)
-	var not_empty = sync.NewCond(ne)
+	var lock = new(sync.Mutex)
 	var q queue = queue{}
 	var wg = new(sync.WaitGroup)
 
-	q.rp = 0
-	q.wp = 0
-	q.remain = 0
+	q.lock = lock
+	q.values = make(chan int, MAX_QUEUE_NUM)
 	q.wg = wg
-	q.not_full = not_full
-	q.not_empty = not_empty
 
 	for i := 0; i < THREAD_NUM; i++ {
 		ptarg[i] = &thread_arg{i, &q}
