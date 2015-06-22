@@ -104,10 +104,9 @@ func main() {
 	var ptarg [THREAD_NUM]*thread_arg
 	var ctarg [THREAD_NUM]*thread_arg
 
-	var nf = new(sync.Mutex)
-	var not_full = sync.NewCond(nf)
-	var ne = new(sync.Mutex)
-	var not_empty = sync.NewCond(ne)
+	var lock = new(sync.Mutex)
+	var not_full = sync.NewCond(lock)
+	var not_empty = sync.NewCond(lock)
 	var q queue = queue{}
 	var wg = new(sync.WaitGroup)
 
