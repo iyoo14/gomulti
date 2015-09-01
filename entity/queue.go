@@ -10,11 +10,11 @@ type Queue struct {
 	lock   *sync.Mutex
 }
 
-func (q *Queue) Enqueue(v int, id int) {
+func (q *Queue) Enqueue(v int) {
 	q.values <- v
 }
 
-func (q *Queue) Dequeue(id int) (v int) {
+func (q *Queue) Dequeue() (v int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	for {

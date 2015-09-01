@@ -25,19 +25,19 @@ type thread_arg struct {
 func producer_func(args *thread_arg) {
 	for i := 0; i < THREAD_DATA_NUM; i++ {
 		num := args.id*THREAD_DATA_NUM + i
-		args.queue.Enqueue(num, args.id)
+		args.queue.Enqueue(num)
 		fmt.Printf("[Producer %d-%d] ==> %d \n", args.id, i, num)
 		time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
 	}
 
-	args.queue.Enqueue(END_DATA, args.id)
+	args.queue.Enqueue(END_DATA)
 	return
 }
 
 func consumer_func(args *thread_arg, wg *sync.WaitGroup) {
 	var i int
 	for {
-		i = args.queue.Dequeue(args.id)
+		i = args.queue.Dequeue()
 		if i == END_DATA {
 			break
 		}

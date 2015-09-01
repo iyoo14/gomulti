@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/iyoo14/gomulti/entity"
-	"math/rand"
+	"math"
 	"runtime"
 	"sync"
-	"time"
 )
 
 const (
@@ -18,11 +17,53 @@ const (
 )
 
 type thread_arg struct {
-	id    int
-	queue *entity.Queue
+	id     int
+	primes []bool
+	queue  *entity.Queue
+	wg     *sync.WaitGroup
 }
 
-func judgmentPrime() {
+func thread_func(args *thread_arg) {
 
-	for {
-		q.Dequeue(
+	num := args.queue.Dequeue()
+	limit := int(math.Sqrt(float64(num)))
+	for i := 2; i <= limit; i++ {
+		if args.primes[i] && num%i == 0 {
+			args.primes[num] = false
+			break
+		}
+	}
+	args.wg.Done()
+}
+
+func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	var targ [THREAD_NUM]*thread_arg
+	var wg = new(sync.WaitGroup)
+	var primes []bool
+	for i := 0; i < DATA_NUM; i++ {
+		primes[i] = true
+	}
+
+	var q *entity.Queue = entity.NewQueue(MAX_QUEUE_NUM)
+
+	for i := 0; i < THREAD_NUM; i++ {
+		targ[i] = &thread_arg{i, primes, q, wg}
+		wg.Add(1)
+		go thread_func(targ[i])
+	}
+
+	for i := 2; i < DATA_NUM; i++ {
+		q.Enqueue(i)
+	}
+
+	for i := 0; i < THREAD_NUM; i++ {
+		q.Enqueue(END_DATA)
+	}
+
+	wg.Wait()
+	for k, v := range primes {
+		fmt.Printf("%d - %v\n", k, v)
+	}
+}
