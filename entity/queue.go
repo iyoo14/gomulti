@@ -15,14 +15,17 @@ func (q *Queue) Enqueue(v int) {
 }
 
 func (q *Queue) Dequeue() (v int) {
-	q.lock.Lock()
-	defer q.lock.Unlock()
-	for {
-		if len(q.values) != 0 {
-			break
+	/*
+		q.lock.Lock()
+		defer q.lock.Unlock()
+		for {
+			if len(q.values) != 0 {
+				break
+			}
+			time.Sleep(1 * time.Second)
 		}
-		time.Sleep(1 * time.Second)
-	}
+	*/
+	time.Sleep(1 * time.Second)
 	return <-q.values
 }
 

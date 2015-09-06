@@ -37,6 +37,7 @@ func producer_func(args *thread_arg) {
 func consumer_func(args *thread_arg, wg *sync.WaitGroup) {
 	var i int
 	for {
+		fmt.Println("dequeue")
 		i = args.queue.Dequeue()
 		if i == END_DATA {
 			break
