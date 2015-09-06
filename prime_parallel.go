@@ -9,7 +9,7 @@ import (
 
 const (
 	THREAD_NUM = 2
-	DATA_NUM   = 10
+	DATA_NUM   = 100
 )
 
 type thread_arg struct {

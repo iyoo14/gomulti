@@ -9,7 +9,7 @@ import (
 
 const (
 	THREAD_NUM      = 2
-	DATA_NUM        = 10
+	DATA_NUM        = 100
 	THREAD_DATA_NUM = DATA_NUM / THREAD_NUM
 	END_DATA        = -1
 	QUEUE_NUM       = DATA_NUM / 2
@@ -46,9 +46,9 @@ func thread_func(args *thread_arg) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	var targ [THREAD_NUM]*thread_arg
 	var pipeline_size int = (int(math.Sqrt(float64(DATA_NUM))) + 1) / 2
-	var qs [QUEUE_NUM]*entity.Queue
+	var targ []*thread_arg = make([]*thread_arg, pipeline_size)
+	var qs []*entity.Queue = make([]*entity.Queue, pipeline_size)
 
 	for i := 0; i < pipeline_size; i++ {
 		qs[i] = entity.NewQueue(DATA_NUM + 1)
@@ -56,11 +56,12 @@ func main() {
 
 	targ[0] = &thread_arg{divider: 2, next_q: qs[0]}
 	go master_func(targ[0])
-	for i := 1; i < THREAD_NUM; i++ {
+	for i := 1; i < pipeline_size; i++ {
 		targ[i] = &thread_arg{divider: i*2 + 1, prev_q: qs[i-1], next_q: qs[i]}
 		go thread_func(targ[i])
 	}
 
+	fmt.Println(pipeline_size - 1)
 	for i := 2; i < DATA_NUM+1; i++ {
 		v := qs[pipeline_size-1].Dequeue()
 
